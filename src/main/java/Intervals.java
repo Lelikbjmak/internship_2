@@ -261,9 +261,15 @@ public class Intervals {
     private static String generateActualIntervalLastNoteAccordingToActualAndExpectedSemitoneDifference(Note expectedLastNote, int differenceBetweenActualAndExpectedSemitoneNumbers) {
 
         String actualLastNoteName = expectedLastNote.noteName();
+
+
+        if (differenceBetweenActualAndExpectedSemitoneNumbers == 0)
+            return actualLastNoteName;
+
         actualLastNoteName = actualLastNoteName
                 .concat(SEMITONE_DIFFERENCE_TO_ACCIDENTAL_CONFORMATION_MAP
                         .get(differenceBetweenActualAndExpectedSemitoneNumbers));
+
         return actualLastNoteName;
     }
 
