@@ -3,8 +3,7 @@ import java.util.Map;
 
 public class Intervals {
 
-    private static final String INTERVAL_NOTE_ORDER_ASC = "asc";
-    private static final String INTERVAL_NOTE_ORDER_DESC = "dsc";
+    private static final String INTERVAL_NOTE_ORDER_ASC = "asc"; // otherwise dsc
 
     public static final String ACCIDENTAL_SHARP = "#";
     public static final String ACCIDENTAL_DOUBLE_SHARP = "##";
@@ -12,19 +11,25 @@ public class Intervals {
     public static final String ACCIDENTAL_DOUBLE_FLAT = "bb";
 
     private static final String ILLEGAL_ARGUMENT_EXCEPTION_INVALID_ARGUMENT_COUNT_MESSAGE =
-            "Illegal number of arguments in input array. Array have to comprise 2, or 3 arguments.";
-    private static final String ILLEGAL_ARGUMENT_EXCEPTION_INVALID_ARGUMENT_VALUE_MESSAGE =
-            "Invalid value in derived arguments array.";
+            "Illegal number of elements in input array.";
 
     private static final String PERFECT_OCTAVE_INTERVAL = "P8";
 
-    private record Interval(String intervalName, Integer semitonesNumber, Integer degreeQuantity) {
+    private static final int MAX_INTERVAL_COUNT = 8;
+    private static final int MIN_INTERVAL_COUNT = 1;
+    private static final int MAX_SEMITONE_NUMBER = 12;
+    private static final int MIN_SEMITONE_NUMBER = 0;
+
+    private record Interval(IntervalProperty intervalProperties, Note firstIntervalNote, String noteOrder) {
+    }
+
+    private record IntervalProperty(String intervalName, Integer semitonesNumber, Integer degreeQuantity) {
     }
 
     private record Note(String noteName, int semitoneNumber, int currentDegree) {
     }
 
-    private enum NOTE_ENUM {
+    private enum NOTE_NAME_ENUM {
 
         NOTE_C("C"),
         NOTE_D("D"),
@@ -36,7 +41,7 @@ public class Intervals {
 
         private final String noteName;
 
-        NOTE_ENUM(String noteName) {
+        NOTE_NAME_ENUM(String noteName) {
             this.noteName = noteName;
         }
 
@@ -45,154 +50,262 @@ public class Intervals {
         }
     }
 
-    private static final Map<String, Interval> INTERVALS_MAP = Map.ofEntries(
-            Map.entry("m2", new Interval("Minor Second", 1, 2)),
-            Map.entry("M2", new Interval("Major Second", 2, 2)),
-            Map.entry("m3", new Interval("Minor Third", 3, 3)),
-            Map.entry("M3", new Interval("Major Third", 4, 3)),
-            Map.entry("P4", new Interval("Perfect Fourth", 5, 4)),
-            Map.entry("P5", new Interval("Perfect Fifth", 7, 5)),
-            Map.entry("m6", new Interval("Minor Sixth", 8, 6)),
-            Map.entry("M6", new Interval("Major Sixth", 9, 6)),
-            Map.entry("m7", new Interval("Minor Seventh", 10, 7)),
-            Map.entry("M7", new Interval("Major Seventh", 11, 7)),
-            Map.entry("P8", new Interval("Perfect Octave", 12, 8))
-    );
+    private enum NOTE_DEGREE_SEMITONE_ENUM {
 
-    public static String intervalConstruction(String[] args) {
+        NOTE_C(0),
+        NOTE_D(2),
+        NOTE_E(4),
+        NOTE_F(5),
+        NOTE_G(7),
+        NOTE_A(9),
+        NOTE_B(11);
 
-        if (args.length < 2 || args.length > 3) {
-            throw new IllegalArgumentException(ILLEGAL_ARGUMENT_EXCEPTION_INVALID_ARGUMENT_COUNT_MESSAGE);
+        private final int defaultSemitoneNumber;
+
+        NOTE_DEGREE_SEMITONE_ENUM(int semitoneNumber) {
+            this.defaultSemitoneNumber = semitoneNumber;
         }
 
-        final String additionalIntervalName = args[0];
-        final String furtherIntervalFirstNoteName = args[1].substring(0, 1); // get only Note without accidentals
-        final String[] furtherIntervalFirstNoteAccidentals = args[1].substring(1).split("");
-        final String intervalNoteOrder = args.length == 3 ? args[2] : INTERVAL_NOTE_ORDER_ASC;
+        public int getDefaultSemitoneNumber() {
+            return defaultSemitoneNumber;
+        }
 
-        if (!areDerivedArgumentsValid(additionalIntervalName, furtherIntervalFirstNoteName, intervalNoteOrder))
-            throw new IllegalArgumentException(ILLEGAL_ARGUMENT_EXCEPTION_INVALID_ARGUMENT_VALUE_MESSAGE);
-
-        if (additionalIntervalName.equals(PERFECT_OCTAVE_INTERVAL))
-            return furtherIntervalFirstNoteName;
-
-        Note furtherIntervalFirstNote = getIntervalFirstNoteByNameAndAccidentals(furtherIntervalFirstNoteName, furtherIntervalFirstNoteAccidentals);
-        Interval additionalInterval = getIntervalByName(additionalIntervalName);
-
-        return getIntervalLastNoteByDegreeAndSemitone(furtherIntervalFirstNote, additionalInterval);
+        public int getDefaultDegreeNumber() {
+            return this.ordinal() + 1;
+        }
     }
 
+    private static final Map<String, IntervalProperty> INTERVAL_PROPERTIES_MAP = Map.ofEntries(
+            Map.entry("m2", new IntervalProperty("Minor Second", 1, 2)),
+            Map.entry("M2", new IntervalProperty("Major Second", 2, 2)),
+            Map.entry("m3", new IntervalProperty("Minor Third", 3, 3)),
+            Map.entry("M3", new IntervalProperty("Major Third", 4, 3)),
+            Map.entry("P4", new IntervalProperty("Perfect Fourth", 5, 4)),
+            Map.entry("P5", new IntervalProperty("Perfect Fifth", 7, 5)),
+            Map.entry("m6", new IntervalProperty("Minor Sixth", 8, 6)),
+            Map.entry("M6", new IntervalProperty("Major Sixth", 9, 6)),
+            Map.entry("m7", new IntervalProperty("Minor Seventh", 10, 7)),
+            Map.entry("M7", new IntervalProperty("Major Seventh", 11, 7)),
+            Map.entry("P8", new IntervalProperty("Perfect Octave", 12, 8))
+    );
+
+    private static final Map<String, Integer> ACCIDENTAL_TO_SEMITONE_NUMBER_CONFORMATION_MAP = Map.of(
+            ACCIDENTAL_FLAT, -1,
+            ACCIDENTAL_DOUBLE_FLAT, -2,
+            ACCIDENTAL_SHARP, 1,
+            ACCIDENTAL_DOUBLE_SHARP, 2
+    );
+
+    private static final Map<Integer, String> SEMITONE_DIFFERENCE_TO_ACCIDENTAL_CONFORMATION_MAP = Map.of(
+            -1, ACCIDENTAL_FLAT,
+            -2, ACCIDENTAL_DOUBLE_FLAT,
+            1, ACCIDENTAL_SHARP,
+            2, ACCIDENTAL_DOUBLE_SHARP
+    );
+
+    /**
+     * IntervalConstruct - Construct Interval from certain {@link Note} to another Note according to Interval properties
+     *
+     * @param args - Contain: args[0] - {@link Interval} we're going to build,
+     *             args[1] - N{@link Note} we start our interval,
+     *             args[2] - optional, noteOrder (asc/desc)
+     * @return - Name of the LAST Note, our constructed interval comprises
+     */
+    public static String intervalConstruction(String[] args) {
+
+        if (args.length < 1 || args.length > 3)
+            throw new IllegalNumberOfArgumentsException(ILLEGAL_ARGUMENT_EXCEPTION_INVALID_ARGUMENT_COUNT_MESSAGE);
+
+        String intervalName = args[0];
+
+        String beginNoteName = args[1].substring(0, 1);
+        String accidentalForNote = args[1].substring(1);
+
+        String noteOrder = args.length == 3 ? args[2] : INTERVAL_NOTE_ORDER_ASC;
+
+        if (intervalName.equals(PERFECT_OCTAVE_INTERVAL))
+            return beginNoteName;
+
+        Note constructedIntervalFirstNote = getNoteAccordingToNameAndAccidentals(beginNoteName, accidentalForNote);
+
+        IntervalProperty constructedIntervalProperties = getConstructionalIntervalPropertiesByName(intervalName);
+        Interval constructedInterval = constructIntervalAccordingToPropertiesAndFirstNote(constructedIntervalProperties, constructedIntervalFirstNote, noteOrder);
+
+        Note constructedIntervalExpectedLastNote = getExpectedConstructedIntervalLastNote(constructedInterval);
+        Note constructedIntervalActualLastNote = getActualLastNoteForIntervalAccordingToExpectedLastNote(constructedInterval, constructedIntervalExpectedLastNote);
+
+        return constructedIntervalActualLastNote.noteName();
+    }
+
+    /**
+     * IntervalIdentifier
+     *
+     * @param args
+     * @return
+     */
     public static String intervalIdentification(String[] args) {
+
+        String firstNoteName = args[0].substring(0, 1);
+        String firstNoteAccidentals = args[0].substring(1);
+        String lastNoteName = args[1].substring(0, 1);
+        String lastNoteAccidentals = args[1].substring(1);
+        String noteOrder = args.length > 1 ? args[2] : INTERVAL_NOTE_ORDER_ASC;
+
+        Note firstNote = getNoteAccordingToNameAndAccidentals(firstNoteName, firstNoteAccidentals);
+        Note lastNote = getNoteAccordingToNameAndAccidentals(lastNoteAccidentals, lastNoteAccidentals);
+
+        int degreeDifference = firstNote.currentDegree - lastNote.currentDegree;
+        int semitoneDifference = firstNote.semitoneNumber - lastNote.semitoneNumber;
+
         return "";
     }
 
-    private static Note getIntervalFirstNoteByNameAndAccidentals(String noteName, String[] noteAccidentals) {
-
-        NOTE_ENUM enumNote = getNoteEnumValueByName(noteName);  // first Note in further interval (It's a note we start.)
-
-        int semitonesNumberForNote = enumNote.ordinal() * 2;  // semitones THIS FIRST Note may have if it was the end of an interval
-        int degreeNumberForNote = enumNote.ordinal();        // degree of the interval THIS FIRST may be situated in
-
-        semitonesNumberForNote = semitonesNumberForNote + computeAdditionalSemitoneNumberAccordingToAccidentals(noteAccidentals); // add additional semitones for Note if it contains accidentals
-
-        return new Note(enumNote.getNoteName(), semitonesNumberForNote, degreeNumberForNote);
+    private static IntervalProperty getConstructionalIntervalPropertiesByName(String intervalName) {
+        return INTERVAL_PROPERTIES_MAP.get(intervalName);
     }
 
-    private static int computeAdditionalSemitoneNumberAccordingToAccidentals(String[] noteAccidentals) {
+    private static Note getNoteAccordingToNameAndAccidentals(String briefNoteName, String accidentals) {
 
-        int additionalSemitonesForNote = 0;
+        NOTE_NAME_ENUM currentNoteFullName = getNoteFullName(briefNoteName);
+        NOTE_DEGREE_SEMITONE_ENUM degreeAndSemitoneForCurrentNote = NOTE_DEGREE_SEMITONE_ENUM.valueOf(currentNoteFullName.name());
 
-        for (String possibleAccidental :
-                noteAccidentals) {
-            if (possibleAccidental.equals(ACCIDENTAL_SHARP))
-                additionalSemitonesForNote++;
-            else if (possibleAccidental.equals(ACCIDENTAL_FLAT)) {
-                additionalSemitonesForNote--;
-            }
+        int degreeNumberForNote = degreeAndSemitoneForCurrentNote.getDefaultDegreeNumber();
+        int semitoneNumberForNote = getNoteSemitoneNumberAccordingToAccidentals(degreeAndSemitoneForCurrentNote, accidentals);
+
+        return new Note(currentNoteFullName.getNoteName(), semitoneNumberForNote, degreeNumberForNote);
+    }
+
+    private static NOTE_NAME_ENUM getNoteFullName(String briefNoteName) {
+        return Arrays.stream(NOTE_NAME_ENUM.values())
+                .filter(note -> note.getNoteName().equals(briefNoteName))
+                .findFirst()
+                .orElseThrow(RuntimeException::new);
+    }
+
+    private static int getNoteSemitoneNumberAccordingToAccidentals(NOTE_DEGREE_SEMITONE_ENUM defaultNoteProperties,
+                                                                   String accidentals) {
+        int noteSemitoneNumber = defaultNoteProperties.getDefaultSemitoneNumber();
+
+        if (!accidentals.isBlank())
+            noteSemitoneNumber += getAdditionalSemitonesFromAccidentals(accidentals);
+
+        return noteSemitoneNumber;
+    }
+
+    private static int getAdditionalSemitonesFromAccidentals(String accidentals) {
+        return ACCIDENTAL_TO_SEMITONE_NUMBER_CONFORMATION_MAP.get(accidentals);
+    }
+
+    private static Note getExpectedConstructedIntervalLastNote(Interval constructedInterval) {
+
+        int lastNoteDegree = getConstructedIntervalLastNoteDegreeAccordingToIntervalNoteOrder(constructedInterval);
+
+        NOTE_NAME_ENUM constructedIntervalLastNoteName = NOTE_NAME_ENUM.values()[lastNoteDegree - 1];
+        NOTE_DEGREE_SEMITONE_ENUM lastNoteActualDegreeAndSemitones = NOTE_DEGREE_SEMITONE_ENUM.valueOf(constructedIntervalLastNoteName.name());
+
+        return new Note(constructedIntervalLastNoteName.getNoteName(),
+                lastNoteActualDegreeAndSemitones.getDefaultSemitoneNumber(), lastNoteActualDegreeAndSemitones.getDefaultDegreeNumber());
+    }
+
+    private static int getConstructedIntervalLastNoteDegreeAccordingToIntervalNoteOrder(Interval constructedInterval) {
+
+        int lastNoteDegree;
+
+        if (constructedInterval.noteOrder().equals(INTERVAL_NOTE_ORDER_ASC)) {
+            lastNoteDegree = getConstructedIntervalLastNoteDegreeForAscNoteOrder(constructedInterval);
+        } else {
+            lastNoteDegree = getConstructedIntervalLastNoteDegreeForDescNoteOrder(constructedInterval);
         }
 
-        return additionalSemitonesForNote;
+        return lastNoteDegree;
     }
 
-    private static NOTE_ENUM getNoteEnumValueByName(String noteName) {
-        return Arrays.stream(NOTE_ENUM.values())
-                .filter(note -> noteName.equals(note.getNoteName()))
-                .findFirst().orElseThrow(RuntimeException::new);
+    private static int getConstructedIntervalLastNoteDegreeForAscNoteOrder(Interval constructedInterval) {
+
+        int lastNoteDegree = constructedInterval.firstIntervalNote().currentDegree() +
+                constructedInterval.intervalProperties().degreeQuantity() - 1;
+
+        if (lastNoteDegree >= MAX_INTERVAL_COUNT) // indicates that we have a note step over the note 'B' - 1 more additional semitone to achieve note 'C'
+            lastNoteDegree = lastNoteDegree - MAX_INTERVAL_COUNT + 1;
+
+        return lastNoteDegree;
     }
 
-    private static String getIntervalLastNoteByDegreeAndSemitone(Note firstNote, Interval additionalInterval) {
+    private static int getConstructedIntervalLastNoteDegreeForDescNoteOrder(Interval constructedInterval) {
 
-        int lastNoteIndexForInterval = getActualIntervalDegreeStartsWithNote(firstNote, additionalInterval);
-        NOTE_ENUM lastIntervalNoteEnumValue = NOTE_ENUM.values()[lastNoteIndexForInterval];
-        int actualSemitoneNumberForLastNoteInterval = getActualIntervalSemitonesStartsWithNote(firstNote, additionalInterval);
-        int expectedSemitoneNumberForNewInterval = lastIntervalNoteEnumValue.ordinal() * 2; // semitones for the last Note of our interval we are building
-        int differenceBetweenActualAndExpectedSemitoneNumbers = expectedSemitoneNumberForNewInterval - actualSemitoneNumberForLastNoteInterval;
+        int lastNoteDegree = constructedInterval.firstIntervalNote().currentDegree() -
+                constructedInterval.intervalProperties().degreeQuantity() + 1;
+        // 0 or less
+        if (lastNoteDegree < MIN_INTERVAL_COUNT)
+            lastNoteDegree = lastNoteDegree + MAX_INTERVAL_COUNT - 1;
 
-        return getNoteNameAccordingToDifferenceBetweenActualAndExpectedSemitoneNumber(lastIntervalNoteEnumValue,
+        return lastNoteDegree;
+    }
+
+    private static Interval constructIntervalAccordingToPropertiesAndFirstNote(IntervalProperty constructedIntervalProperties, Note constructedIntervalFirstNote, String noteOrder) {
+        return new Interval(constructedIntervalProperties, constructedIntervalFirstNote, noteOrder);
+    }
+
+    private static Note getActualLastNoteForIntervalAccordingToExpectedLastNote(Interval constructedInterval, Note expectedLastNote) {
+
+        int actualSemitoneNumber = computeConstructedIntervalLastNoteSemitoneNumberAccordingToIntervalFirstNoteAndNoteOrder(constructedInterval);
+
+        int differenceBetweenActualAndExpectedSemitoneNumbers = actualSemitoneNumber - expectedLastNote.semitoneNumber();
+
+        String actualLastNoteName = generateActualIntervalLastNoteAccordingToActualAndExpectedSemitoneDifference(expectedLastNote,
                 differenceBetweenActualAndExpectedSemitoneNumbers);
+
+        return new Note(actualLastNoteName, actualSemitoneNumber, expectedLastNote.currentDegree());
     }
 
-    private static String getNoteNameAccordingToDifferenceBetweenActualAndExpectedSemitoneNumber(NOTE_ENUM note,
-                                                                                                 int differenceBetweenActualAndExpectedSemitoneNumbers) {
-        String noteName = note.getNoteName();
+    private static String generateActualIntervalLastNoteAccordingToActualAndExpectedSemitoneDifference(Note expectedLastNote, int differenceBetweenActualAndExpectedSemitoneNumbers) {
 
-        if (differenceBetweenActualAndExpectedSemitoneNumbers == -1) {
-            return noteName.concat(ACCIDENTAL_FLAT);
-        } else if (differenceBetweenActualAndExpectedSemitoneNumbers == -2) {
-            return noteName.concat(ACCIDENTAL_DOUBLE_FLAT);
+        String actualLastNoteName = expectedLastNote.noteName();
+        actualLastNoteName = actualLastNoteName
+                .concat(SEMITONE_DIFFERENCE_TO_ACCIDENTAL_CONFORMATION_MAP
+                        .get(differenceBetweenActualAndExpectedSemitoneNumbers));
+        return actualLastNoteName;
+    }
+
+    private static int computeConstructedIntervalLastNoteSemitoneNumberAccordingToIntervalFirstNoteAndNoteOrder(Interval constructedInterval) {
+
+        int actualSemitoneNumber;
+
+        if (constructedInterval.noteOrder().equals(INTERVAL_NOTE_ORDER_ASC)) {
+            actualSemitoneNumber = computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderAsc(constructedInterval);
+        } else {
+            actualSemitoneNumber = computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderDesc(constructedInterval);
         }
 
-        if (differenceBetweenActualAndExpectedSemitoneNumbers == 1) {
-            return noteName.concat(ACCIDENTAL_SHARP);
-        } else if (differenceBetweenActualAndExpectedSemitoneNumbers == 2) {
-            return noteName.concat(ACCIDENTAL_DOUBLE_SHARP);
+        return actualSemitoneNumber;
+    }
+
+    private static int computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderAsc(Interval constructedInterval) {
+
+        int actualSemitoneNumber = constructedInterval.intervalProperties().semitonesNumber() +
+                constructedInterval.firstIntervalNote().semitoneNumber();
+
+        if (actualSemitoneNumber >= MAX_SEMITONE_NUMBER)
+            actualSemitoneNumber -= MAX_SEMITONE_NUMBER;
+
+        return actualSemitoneNumber;
+    }
+
+    private static int computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderDesc(Interval constructedInterval) {
+
+        int actualSemitoneNumber = constructedInterval.firstIntervalNote().semitoneNumber() -
+                constructedInterval.intervalProperties().semitonesNumber();
+
+        if (actualSemitoneNumber <= MIN_SEMITONE_NUMBER)
+            actualSemitoneNumber += MAX_SEMITONE_NUMBER;
+
+        return actualSemitoneNumber;
+    }
+
+    private static class IllegalNumberOfArgumentsException extends RuntimeException {
+        public IllegalNumberOfArgumentsException(String message) {
+            super(message);
         }
-
-        return noteName;
     }
 
-    private static int getActualIntervalDegreeStartsWithNote(Note noteIntervalStartsWith, Interval interval) {
-
-        int lastNoteIndexForInterval = noteIntervalStartsWith.currentDegree() +
-                interval.degreeQuantity() - 1;
-
-        if (lastNoteIndexForInterval > NOTE_ENUM.values().length)
-            lastNoteIndexForInterval = lastNoteIndexForInterval - NOTE_ENUM.values().length;
-
-        return lastNoteIndexForInterval;
-    }
-
-    private static int getActualIntervalSemitonesStartsWithNote(Note noteIntervalStartsWith, Interval interval) {
-
-        int actualSemitoneNumberForLastNoteInterval = noteIntervalStartsWith.semitoneNumber() + interval.semitonesNumber();
-
-        if (actualSemitoneNumberForLastNoteInterval > NOTE_ENUM.values().length)
-            actualSemitoneNumberForLastNoteInterval = actualSemitoneNumberForLastNoteInterval - NOTE_ENUM.values().length * 2;
-
-        return actualSemitoneNumberForLastNoteInterval;
-    }
-
-    private static boolean areDerivedArgumentsValid(String intervalName, String firstIntervalNote,
-                                                    String intervalNoteOrder) {
-        if (!INTERVALS_MAP.containsKey(intervalName))
-            return false;
-
-        if (!isNoteExistsByName(firstIntervalNote))
-            return false;
-
-        return intervalNoteOrder.contentEquals(INTERVAL_NOTE_ORDER_ASC) ||
-                intervalNoteOrder.contentEquals(INTERVAL_NOTE_ORDER_DESC);
-    }
-
-    private static boolean isNoteExistsByName(String firstIntervalNote) {
-        return Arrays.stream(NOTE_ENUM.values())
-                .anyMatch(p -> p.getNoteName().equals(firstIntervalNote));
-    }
-
-
-
-
-    private static Interval getIntervalByName(String intervalName) {
-        return INTERVALS_MAP.get(intervalName);
-    }
 }
