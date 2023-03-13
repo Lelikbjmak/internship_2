@@ -1,9 +1,10 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class AscIntervalsConstructTest {
+public class DescIntervalsConstructTest {
 
-    private static final String ASC_NOTE_ORDER = "asc";
+
+    private static final String DESC_NOTE_ORDER = "dsc";
 
     private enum NOTE {
 
@@ -83,14 +84,12 @@ public class AscIntervalsConstructTest {
     }
 
     @Test
-    public void ascIntervalConstructorTest() {
-
-        Assertions.assertEquals(NOTE.NOTE_E.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.PERFECT_FIFTH.intervalName, NOTE.NOTE_A.noteName, ASC_NOTE_ORDER}));
-        Assertions.assertEquals(NOTE.NOTE_E.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.MINOR_SECOND.intervalName, NOTE.NOTE_D_SHARP.noteName, ASC_NOTE_ORDER}));
-        Assertions.assertEquals(NOTE.NOTE_G_DOUBLE_fLAT.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.MINOR_SECOND.intervalName, NOTE.NOTE_F_FLAT.noteName, ASC_NOTE_ORDER}));
-        Assertions.assertEquals(NOTE.NOTE_D.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.MAJOR_SECOND.intervalName, NOTE.NOTE_C.noteName, ASC_NOTE_ORDER}));
-        Assertions.assertEquals(NOTE.NOTE_F_SHARP.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.PERFECT_FIFTH.intervalName, NOTE.NOTE_B.noteName, ASC_NOTE_ORDER}));
-        Assertions.assertEquals(NOTE.NOTE_E_FLAT.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.MAJOR_THIRD.intervalName, NOTE.NOTE_C_FLAT.noteName, ASC_NOTE_ORDER}));
-
+    public void descIntervalConstructTest() {
+        Assertions.assertEquals(NOTE.NOTE_A_DOUBLE_fLAT.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.MAJOR_THIRD.intervalName, NOTE.NOTE_C_FLAT.noteName, DESC_NOTE_ORDER}));
+        Assertions.assertEquals(NOTE.NOTE_A.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.MINOR_SECOND.intervalName, NOTE.NOTE_B_FLAT.noteName, DESC_NOTE_ORDER}));
+        Assertions.assertEquals(NOTE.NOTE_D_SHARP.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.PERFECT_FOURTH.intervalName, NOTE.NOTE_G_SHARP.noteName, DESC_NOTE_ORDER}));
+        Assertions.assertEquals(NOTE.NOTE_G_SHARP.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.MINOR_THIRD.intervalName, NOTE.NOTE_B.noteName, DESC_NOTE_ORDER}));
+        Assertions.assertEquals(NOTE.NOTE_B.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.PERFECT_FOURTH.intervalName, NOTE.NOTE_E.noteName, DESC_NOTE_ORDER}));
+        Assertions.assertEquals(NOTE.NOTE_D_SHARP.noteName, Intervals.intervalConstruction(new String[]{INTERVAL.MAJOR_SECOND.intervalName, NOTE.NOTE_E_SHARP.noteName, DESC_NOTE_ORDER}));
     }
 }
