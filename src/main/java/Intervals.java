@@ -1,4 +1,3 @@
-import java.util.Arrays;
 import java.util.Map;
 
 public class Intervals {
@@ -13,80 +12,77 @@ public class Intervals {
     private static final String ILLEGAL_ARGUMENT_EXCEPTION_INVALID_ARGUMENT_COUNT_MESSAGE =
             "Illegal number of elements in input array.";
 
-    private static final String PERFECT_OCTAVE_INTERVAL = "P8";
-
     private static final int MAX_INTERVAL_COUNT = 8;
     private static final int MIN_INTERVAL_COUNT = 1;
     private static final int MAX_SEMITONE_NUMBER = 12;
     private static final int MIN_SEMITONE_NUMBER = 0;
 
-    private record Interval(IntervalProperty intervalProperties, Note firstIntervalNote, String noteOrder) {
-    }
+    private static final String DEGREE_PROPERTY = "degree";
+    private static final String SEMITONE_PROPERTY = "semitone";
 
-    private record IntervalProperty(String intervalName, Integer semitonesNumber, Integer degreeQuantity) {
-    }
+    private static final String MINOR_SECOND_INTERVAL = "m2";
+    private static final String MAJOR_SECOND_INTERVAL = "M2";
+    private static final String MINOR_THIRD_INTERVAL = "m3";
+    private static final String MAJOR_THIRD_INTERVAL = "M3";
+    private static final String PERFECT_FOURTH_INTERVAL = "P4";
+    private static final String PERFECT_FIFTH_INTERVAL = "P5";
+    private static final String MINOR_SIXTH_INTERVAL = "m6";
+    private static final String MAJOR_SIXTH_INTERVAL = "M6";
+    private static final String MINOR_SEVENTH_INTERVAL = "m7";
+    private static final String MAJOR_SEVENTH_INTERVAL = "M7";
+    private static final String PERFECT_OCTAVE_INTERVAL = "P8";
 
-    private record Note(String noteName, int semitoneNumber, int currentDegree) {
-    }
+    private static final Map<String, Map<String, Integer>> INTERVALS_MAP = Map.ofEntries(
+            Map.entry(MINOR_SECOND_INTERVAL, Map.of(DEGREE_PROPERTY, 2,
+                    SEMITONE_PROPERTY, 1)),
+            Map.entry(MAJOR_SECOND_INTERVAL, Map.of(DEGREE_PROPERTY, 2,
+                    SEMITONE_PROPERTY, 2)),
+            Map.entry(MINOR_THIRD_INTERVAL, Map.of(DEGREE_PROPERTY, 3,
+                    SEMITONE_PROPERTY, 3)),
+            Map.entry(MAJOR_THIRD_INTERVAL, Map.of(DEGREE_PROPERTY, 3,
+                    SEMITONE_PROPERTY, 4)),
+            Map.entry(PERFECT_FOURTH_INTERVAL, Map.of(DEGREE_PROPERTY, 4,
+                    SEMITONE_PROPERTY, 5)),
+            Map.entry(PERFECT_FIFTH_INTERVAL, Map.of(DEGREE_PROPERTY, 5,
+                    SEMITONE_PROPERTY, 7)),
+            Map.entry(MINOR_SIXTH_INTERVAL, Map.of(DEGREE_PROPERTY, 6,
+                    SEMITONE_PROPERTY, 8)),
+            Map.entry(MAJOR_SIXTH_INTERVAL, Map.of(DEGREE_PROPERTY, 6,
+                    SEMITONE_PROPERTY, 9)),
+            Map.entry(MINOR_SEVENTH_INTERVAL, Map.of(DEGREE_PROPERTY, 7,
+                    SEMITONE_PROPERTY, 10)),
+            Map.entry(MAJOR_SEVENTH_INTERVAL, Map.of(DEGREE_PROPERTY, 7,
+                    SEMITONE_PROPERTY, 11)),
+            Map.entry(PERFECT_OCTAVE_INTERVAL, Map.of(DEGREE_PROPERTY, 8,
+                    SEMITONE_PROPERTY, 12))
+    );
 
-    private enum NOTE_NAME_ENUM {
+    private static final String NOTE_C = "C";
+    private static final String NOTE_D = "D";
+    private static final String NOTE_E = "E";
+    private static final String NOTE_F = "F";
+    private static final String NOTE_G = "G";
+    private static final String NOTE_A = "A";
+    private static final String NOTE_B = "B";
 
-        NOTE_C("C"),
-        NOTE_D("D"),
-        NOTE_E("E"),
-        NOTE_F("F"),
-        NOTE_G("G"),
-        NOTE_A("A"),
-        NOTE_B("B");
+    private static final Map<String, Integer> NOTE_DEFAULT_DEGREE_MAP = Map.of(
+            NOTE_C, 1,
+            NOTE_D, 2,
+            NOTE_E, 3,
+            NOTE_F, 4,
+            NOTE_G, 5,
+            NOTE_A, 6,
+            NOTE_B, 7
+    );
 
-        private final String noteName;
-
-        NOTE_NAME_ENUM(String noteName) {
-            this.noteName = noteName;
-        }
-
-        public String getNoteName() {
-            return noteName;
-        }
-    }
-
-    private enum NOTE_DEGREE_SEMITONE_ENUM {
-
-        NOTE_C(0),
-        NOTE_D(2),
-        NOTE_E(4),
-        NOTE_F(5),
-        NOTE_G(7),
-        NOTE_A(9),
-        NOTE_B(11);
-
-        private final int defaultSemitoneNumber;
-
-        NOTE_DEGREE_SEMITONE_ENUM(int semitoneNumber) {
-            this.defaultSemitoneNumber = semitoneNumber;
-        }
-
-        public int getDefaultSemitoneNumber() {
-            return defaultSemitoneNumber;
-        }
-
-        public int getDefaultDegreeNumber() {
-            return this.ordinal() + 1;
-        }
-    }
-
-    private static final Map<String, IntervalProperty> INTERVAL_PROPERTIES_MAP = Map.ofEntries(
-            Map.entry("m2", new IntervalProperty("Minor Second", 1, 2)),
-            Map.entry("M2", new IntervalProperty("Major Second", 2, 2)),
-            Map.entry("m3", new IntervalProperty("Minor Third", 3, 3)),
-            Map.entry("M3", new IntervalProperty("Major Third", 4, 3)),
-            Map.entry("P4", new IntervalProperty("Perfect Fourth", 5, 4)),
-            Map.entry("P5", new IntervalProperty("Perfect Fifth", 7, 5)),
-            Map.entry("m6", new IntervalProperty("Minor Sixth", 8, 6)),
-            Map.entry("M6", new IntervalProperty("Major Sixth", 9, 6)),
-            Map.entry("m7", new IntervalProperty("Minor Seventh", 10, 7)),
-            Map.entry("M7", new IntervalProperty("Major Seventh", 11, 7)),
-            Map.entry("P8", new IntervalProperty("Perfect Octave", 12, 8))
+    private static final Map<String, Integer> NOTE_DEFAULT_SEMITONE_MAP = Map.of(
+            NOTE_C, 0,
+            NOTE_D, 2,
+            NOTE_E, 4,
+            NOTE_F, 5,
+            NOTE_G, 7,
+            NOTE_A, 9,
+            NOTE_B, 11
     );
 
     private static final Map<String, Integer> ACCIDENTAL_TO_SEMITONE_NUMBER_CONFORMATION_MAP = Map.of(
@@ -104,17 +100,13 @@ public class Intervals {
     );
 
     /**
-     * IntervalConstruct - Construct Interval from certain {@link Note} to another Note according to Interval properties
      *
-     * @param args - Contain: args[0] - {@link Interval} we're going to build,
-     *             args[1] - N{@link Note} we start our interval,
-     *             args[2] - optional, noteOrder (asc/desc)
-     * @return - Name of the LAST Note, our constructed interval comprises
      */
     public static String intervalConstruction(String[] args) {
 
         if (args.length < 1 || args.length > 3)
-            throw new IllegalNumberOfArgumentsException(ILLEGAL_ARGUMENT_EXCEPTION_INVALID_ARGUMENT_COUNT_MESSAGE);
+            throw new IllegalNumberOfArgumentsException(
+                    ILLEGAL_ARGUMENT_EXCEPTION_INVALID_ARGUMENT_COUNT_MESSAGE);
 
         String intervalName = args[0];
 
@@ -126,15 +118,19 @@ public class Intervals {
         if (intervalName.equals(PERFECT_OCTAVE_INTERVAL))
             return beginNoteName;
 
-        Note constructedIntervalFirstNote = getNoteAccordingToNameAndAccidentals(beginNoteName, accidentalForNote);
+        // String - noteName, Map<String, integer> - properties of Semitones = x, Degree = y
+        Map<String, Integer> constructedIntervalFirstNote =
+                getNoteAccordingToNameAndAccidentals(beginNoteName, accidentalForNote);
 
-        IntervalProperty constructedIntervalProperties = getConstructionalIntervalPropertiesByName(intervalName);
-        Interval constructedInterval = constructIntervalAccordingToPropertiesAndFirstNote(constructedIntervalProperties, constructedIntervalFirstNote, noteOrder);
+        Map<String, Integer> constructedInterval = getConstructedIntervalByName(intervalName);
 
-        Note constructedIntervalExpectedLastNote = getExpectedConstructedIntervalLastNote(constructedInterval);
-        Note constructedIntervalActualLastNote = getActualLastNoteForIntervalAccordingToExpectedLastNote(constructedInterval, constructedIntervalExpectedLastNote);
+        Map<String, Integer> constructedIntervalExpectedLastNote =
+                getExpectedConstructedIntervalLastNoteAccordingToFirstNoteAndNoteOrder(
+                        constructedInterval, constructedIntervalFirstNote, noteOrder);
 
-        return constructedIntervalActualLastNote.noteName();
+        return getActualLastNoteForIntervalAccordingToExpectedLastNote(
+                constructedInterval, constructedIntervalExpectedLastNote,
+                constructedIntervalFirstNote, noteOrder);
     }
 
     /**
@@ -151,40 +147,30 @@ public class Intervals {
         String lastNoteAccidentals = args[1].substring(1);
         String noteOrder = args.length > 1 ? args[2] : INTERVAL_NOTE_ORDER_ASC;
 
-        Note firstNote = getNoteAccordingToNameAndAccidentals(firstNoteName, firstNoteAccidentals);
-        Note lastNote = getNoteAccordingToNameAndAccidentals(lastNoteAccidentals, lastNoteAccidentals);
-
-        int degreeDifference = firstNote.currentDegree - lastNote.currentDegree;
-        int semitoneDifference = firstNote.semitoneNumber - lastNote.semitoneNumber;
-
         return "";
     }
 
-    private static IntervalProperty getConstructionalIntervalPropertiesByName(String intervalName) {
-        return INTERVAL_PROPERTIES_MAP.get(intervalName);
+    private static Map<String, Integer> getConstructedIntervalByName(String intervalName) {
+        return INTERVALS_MAP.get(intervalName);
     }
 
-    private static Note getNoteAccordingToNameAndAccidentals(String briefNoteName, String accidentals) {
+    private static Map<String, Integer> getNoteAccordingToNameAndAccidentals(
+            String noteName, String accidentals) {
 
-        NOTE_NAME_ENUM currentNoteFullName = getNoteFullName(briefNoteName);
-        NOTE_DEGREE_SEMITONE_ENUM degreeAndSemitoneForCurrentNote = NOTE_DEGREE_SEMITONE_ENUM.valueOf(currentNoteFullName.name());
+        int degreeNumberForNote = NOTE_DEFAULT_DEGREE_MAP.get(noteName);
+        int semitoneNumberForNote = getNoteSemitoneNumberAccordingToNameAndAccidentals(
+                noteName, accidentals);
 
-        int degreeNumberForNote = degreeAndSemitoneForCurrentNote.getDefaultDegreeNumber();
-        int semitoneNumberForNote = getNoteSemitoneNumberAccordingToAccidentals(degreeAndSemitoneForCurrentNote, accidentals);
-
-        return new Note(currentNoteFullName.getNoteName(), semitoneNumberForNote, degreeNumberForNote);
+        return Map.of(
+                DEGREE_PROPERTY, degreeNumberForNote,
+                SEMITONE_PROPERTY, semitoneNumberForNote
+        );
     }
 
-    private static NOTE_NAME_ENUM getNoteFullName(String briefNoteName) {
-        return Arrays.stream(NOTE_NAME_ENUM.values())
-                .filter(note -> note.getNoteName().equals(briefNoteName))
-                .findFirst()
-                .orElseThrow(RuntimeException::new);
-    }
+    private static int getNoteSemitoneNumberAccordingToNameAndAccidentals(
+            String noteName, String accidentals) {
 
-    private static int getNoteSemitoneNumberAccordingToAccidentals(NOTE_DEGREE_SEMITONE_ENUM defaultNoteProperties,
-                                                                   String accidentals) {
-        int noteSemitoneNumber = defaultNoteProperties.getDefaultSemitoneNumber();
+        int noteSemitoneNumber = NOTE_DEFAULT_SEMITONE_MAP.get(noteName);
 
         if (!accidentals.isBlank())
             noteSemitoneNumber += getAdditionalSemitonesFromAccidentals(accidentals);
@@ -196,34 +182,49 @@ public class Intervals {
         return ACCIDENTAL_TO_SEMITONE_NUMBER_CONFORMATION_MAP.get(accidentals);
     }
 
-    private static Note getExpectedConstructedIntervalLastNote(Interval constructedInterval) {
+    private static Map<String, Integer> getExpectedConstructedIntervalLastNoteAccordingToFirstNoteAndNoteOrder(
+            Map<String, Integer> constructedInterval, Map<String, Integer> constructedIntervalFirstNote, String noteOrder) {
 
-        int lastNoteDegree = getConstructedIntervalLastNoteDegreeAccordingToIntervalNoteOrder(constructedInterval);
+        int lastNoteDegree = getConstructedIntervalLastNoteDegreeAccordingToIntervalNoteOrder(
+                constructedInterval, constructedIntervalFirstNote, noteOrder);
 
-        NOTE_NAME_ENUM constructedIntervalLastNoteName = NOTE_NAME_ENUM.values()[lastNoteDegree - 1];
-        NOTE_DEGREE_SEMITONE_ENUM lastNoteActualDegreeAndSemitones = NOTE_DEGREE_SEMITONE_ENUM.valueOf(constructedIntervalLastNoteName.name());
+        String constructedIntervalLastNoteName = getNoteNameByDegree(lastNoteDegree);
 
-        return new Note(constructedIntervalLastNoteName.getNoteName(),
-                lastNoteActualDegreeAndSemitones.getDefaultSemitoneNumber(), lastNoteActualDegreeAndSemitones.getDefaultDegreeNumber());
+        return Map.of(
+                DEGREE_PROPERTY, NOTE_DEFAULT_DEGREE_MAP.get(constructedIntervalLastNoteName),
+                SEMITONE_PROPERTY, NOTE_DEFAULT_SEMITONE_MAP.get(constructedIntervalLastNoteName)
+        );
     }
 
-    private static int getConstructedIntervalLastNoteDegreeAccordingToIntervalNoteOrder(Interval constructedInterval) {
+    private static String getNoteNameByDegree(int degree) {
+        return NOTE_DEFAULT_DEGREE_MAP.entrySet().stream()
+                .filter(entry -> entry.getValue().equals(degree))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElseThrow(RuntimeException::new);
+    }
+
+    private static int getConstructedIntervalLastNoteDegreeAccordingToIntervalNoteOrder(
+            Map<String, Integer> constructedInterval, Map<String, Integer> constructedIntervalFirstNote, String noteOrder) {
 
         int lastNoteDegree;
 
-        if (constructedInterval.noteOrder().equals(INTERVAL_NOTE_ORDER_ASC)) {
-            lastNoteDegree = getConstructedIntervalLastNoteDegreeForAscNoteOrder(constructedInterval);
+        if (noteOrder.equals(INTERVAL_NOTE_ORDER_ASC)) {
+            lastNoteDegree = getConstructedIntervalLastNoteDegreeForAscNoteOrder(
+                    constructedInterval, constructedIntervalFirstNote);
         } else {
-            lastNoteDegree = getConstructedIntervalLastNoteDegreeForDescNoteOrder(constructedInterval);
+            lastNoteDegree = getConstructedIntervalLastNoteDegreeForDescNoteOrder(
+                    constructedInterval, constructedIntervalFirstNote);
         }
 
         return lastNoteDegree;
     }
 
-    private static int getConstructedIntervalLastNoteDegreeForAscNoteOrder(Interval constructedInterval) {
+    private static int getConstructedIntervalLastNoteDegreeForAscNoteOrder(
+            Map<String, Integer> constructedInterval, Map<String, Integer> constructedIntervalFirstNote) {
 
-        int lastNoteDegree = constructedInterval.firstIntervalNote().currentDegree() +
-                constructedInterval.intervalProperties().degreeQuantity() - 1;
+        int lastNoteDegree = constructedIntervalFirstNote.get(DEGREE_PROPERTY) +
+                constructedInterval.get(DEGREE_PROPERTY) - 1;
 
         if (lastNoteDegree >= MAX_INTERVAL_COUNT) // indicates that we have a note step over the note 'B' - 1 more additional semitone to achieve note 'C'
             lastNoteDegree = lastNoteDegree - MAX_INTERVAL_COUNT + 1;
@@ -231,10 +232,11 @@ public class Intervals {
         return lastNoteDegree;
     }
 
-    private static int getConstructedIntervalLastNoteDegreeForDescNoteOrder(Interval constructedInterval) {
+    private static int getConstructedIntervalLastNoteDegreeForDescNoteOrder(
+            Map<String, Integer> constructedInterval, Map<String, Integer> constructedIntervalFirstNote) {
 
-        int lastNoteDegree = constructedInterval.firstIntervalNote().currentDegree() -
-                constructedInterval.intervalProperties().degreeQuantity() + 1;
+        int lastNoteDegree = constructedIntervalFirstNote.get(DEGREE_PROPERTY) -
+                constructedInterval.get(DEGREE_PROPERTY) + 1;
         // 0 or less
         if (lastNoteDegree < MIN_INTERVAL_COUNT)
             lastNoteDegree = lastNoteDegree + MAX_INTERVAL_COUNT - 1;
@@ -242,26 +244,24 @@ public class Intervals {
         return lastNoteDegree;
     }
 
-    private static Interval constructIntervalAccordingToPropertiesAndFirstNote(IntervalProperty constructedIntervalProperties, Note constructedIntervalFirstNote, String noteOrder) {
-        return new Interval(constructedIntervalProperties, constructedIntervalFirstNote, noteOrder);
+    private static String getActualLastNoteForIntervalAccordingToExpectedLastNote(
+            Map<String, Integer> constructedInterval, Map<String, Integer> expectedLastNote,
+            Map<String, Integer> constructedIntervalFirstNote, String noteOrder) {
+
+        int actualSemitoneNumber = computeConstructedIntervalLastNoteSemitoneNumberAccordingToIntervalFirstNoteAndNoteOrder(
+                constructedInterval, constructedIntervalFirstNote, noteOrder);
+
+        int differenceBetweenActualAndExpectedSemitoneNumbers = actualSemitoneNumber -
+                expectedLastNote.get(SEMITONE_PROPERTY);
+
+        return generateActualIntervalLastNoteAccordingToActualAndExpectedSemitoneDifference(
+                expectedLastNote, differenceBetweenActualAndExpectedSemitoneNumbers);
     }
 
-    private static Note getActualLastNoteForIntervalAccordingToExpectedLastNote(Interval constructedInterval, Note expectedLastNote) {
+    private static String generateActualIntervalLastNoteAccordingToActualAndExpectedSemitoneDifference(
+            Map<String, Integer> expectedLastNote, int differenceBetweenActualAndExpectedSemitoneNumbers) {
 
-        int actualSemitoneNumber = computeConstructedIntervalLastNoteSemitoneNumberAccordingToIntervalFirstNoteAndNoteOrder(constructedInterval);
-
-        int differenceBetweenActualAndExpectedSemitoneNumbers = actualSemitoneNumber - expectedLastNote.semitoneNumber();
-
-        String actualLastNoteName = generateActualIntervalLastNoteAccordingToActualAndExpectedSemitoneDifference(expectedLastNote,
-                differenceBetweenActualAndExpectedSemitoneNumbers);
-
-        return new Note(actualLastNoteName, actualSemitoneNumber, expectedLastNote.currentDegree());
-    }
-
-    private static String generateActualIntervalLastNoteAccordingToActualAndExpectedSemitoneDifference(Note expectedLastNote, int differenceBetweenActualAndExpectedSemitoneNumbers) {
-
-        String actualLastNoteName = expectedLastNote.noteName();
-
+        String actualLastNoteName = getNoteNameByDegree(expectedLastNote.get(DEGREE_PROPERTY));
 
         if (differenceBetweenActualAndExpectedSemitoneNumbers == 0)
             return actualLastNoteName;
@@ -273,23 +273,27 @@ public class Intervals {
         return actualLastNoteName;
     }
 
-    private static int computeConstructedIntervalLastNoteSemitoneNumberAccordingToIntervalFirstNoteAndNoteOrder(Interval constructedInterval) {
+    private static int computeConstructedIntervalLastNoteSemitoneNumberAccordingToIntervalFirstNoteAndNoteOrder(
+            Map<String, Integer> constructedInterval, Map<String, Integer> constructedIntervalFirstNote, String noteOrder) {
 
         int actualSemitoneNumber;
 
-        if (constructedInterval.noteOrder().equals(INTERVAL_NOTE_ORDER_ASC)) {
-            actualSemitoneNumber = computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderAsc(constructedInterval);
+        if (noteOrder.equals(INTERVAL_NOTE_ORDER_ASC)) {
+            actualSemitoneNumber = computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderAsc(
+                    constructedInterval, constructedIntervalFirstNote);
         } else {
-            actualSemitoneNumber = computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderDesc(constructedInterval);
+            actualSemitoneNumber = computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderDesc(
+                    constructedInterval, constructedIntervalFirstNote);
         }
 
         return actualSemitoneNumber;
     }
 
-    private static int computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderAsc(Interval constructedInterval) {
+    private static int computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderAsc(
+            Map<String, Integer> constructedInterval, Map<String, Integer> constructedIntervalFirstNote) {
 
-        int actualSemitoneNumber = constructedInterval.intervalProperties().semitonesNumber() +
-                constructedInterval.firstIntervalNote().semitoneNumber();
+        int actualSemitoneNumber = constructedInterval.get(SEMITONE_PROPERTY) +
+                constructedIntervalFirstNote.get(SEMITONE_PROPERTY);
 
         if (actualSemitoneNumber >= MAX_SEMITONE_NUMBER)
             actualSemitoneNumber -= MAX_SEMITONE_NUMBER;
@@ -297,10 +301,11 @@ public class Intervals {
         return actualSemitoneNumber;
     }
 
-    private static int computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderDesc(Interval constructedInterval) {
+    private static int computeConstructedIntervalLastNoteActualSemitoneNumberForNoteOrderDesc(
+            Map<String, Integer> constructedInterval, Map<String, Integer> constructedIntervalFirstNote) {
 
-        int actualSemitoneNumber = constructedInterval.firstIntervalNote().semitoneNumber() -
-                constructedInterval.intervalProperties().semitonesNumber();
+        int actualSemitoneNumber = constructedIntervalFirstNote.get(SEMITONE_PROPERTY) -
+                constructedInterval.get(SEMITONE_PROPERTY);
 
         if (actualSemitoneNumber <= MIN_SEMITONE_NUMBER)
             actualSemitoneNumber += MAX_SEMITONE_NUMBER;
