@@ -4,13 +4,15 @@ public class Intervals {
 
     private static final String INTERVAL_NOTE_ORDER_ASC = "asc"; // otherwise dsc
 
-    public static final String ACCIDENTAL_SHARP = "#";
-    public static final String ACCIDENTAL_DOUBLE_SHARP = "##";
-    public static final String ACCIDENTAL_FLAT = "b";
-    public static final String ACCIDENTAL_DOUBLE_FLAT = "bb";
+    private static final String ACCIDENTAL_SHARP = "#";
+    private static final String ACCIDENTAL_DOUBLE_SHARP = "##";
+    private static final String ACCIDENTAL_FLAT = "b";
+    private static final String ACCIDENTAL_DOUBLE_FLAT = "bb";
 
     private static final String ILLEGAL_ARGUMENT_EXCEPTION_INVALID_ARGUMENT_COUNT_MESSAGE =
             "Illegal number of elements in input array.";
+    private static final String INTERVAL_NOT_DEFINED_EXCEPTION_MESSAGE =
+            "Can't identify the interval.";
 
     private static final int MAX_INTERVAL_COUNT = 8;
     private static final int MIN_INTERVAL_COUNT = 1;
@@ -98,6 +100,7 @@ public class Intervals {
             1, ACCIDENTAL_SHARP,
             2, ACCIDENTAL_DOUBLE_SHARP
     );
+    private static Map.Entry<String, Map<String, Integer>> interval;
 
     /**
      *
@@ -141,13 +144,114 @@ public class Intervals {
      */
     public static String intervalIdentification(String[] args) {
 
+        if (args[0].equals(args[1]))
+            return PERFECT_OCTAVE_INTERVAL;
+
         String firstNoteName = args[0].substring(0, 1);
         String firstNoteAccidentals = args[0].substring(1);
         String lastNoteName = args[1].substring(0, 1);
         String lastNoteAccidentals = args[1].substring(1);
-        String noteOrder = args.length > 1 ? args[2] : INTERVAL_NOTE_ORDER_ASC;
+        String noteOrder = args.length == 3 ? args[2] : INTERVAL_NOTE_ORDER_ASC;
 
-        return "";
+        Map<String, Integer> identicalIntervalFirstNote = getNoteAccordingToNameAndAccidentals(
+                firstNoteName, firstNoteAccidentals);
+
+        Map<String, Integer> identicalIntervalLastNote = getNoteAccordingToNameAndAccidentals(
+                lastNoteName, lastNoteAccidentals);
+
+        return identifyIntervalBetweenTwoNotes(
+                identicalIntervalFirstNote, identicalIntervalLastNote, noteOrder);
+    }
+
+    private static String identifyIntervalBetweenTwoNotes(
+            Map<String, Integer> firstNote, Map<String, Integer> lastNote, String noteOrder) {
+
+        int degreeDifference = getNotesDegreeDifferenceAccordingNoteOrder(firstNote, lastNote, noteOrder);
+        int semitoneDifference = getNotesSemitoneDifferenceAccordingNoteOrder(firstNote, lastNote, noteOrder);
+
+        return identifyIntervalAccordingToDegreeAndSemitoneNumber(degreeDifference, semitoneDifference);
+    }
+
+    private static String identifyIntervalAccordingToDegreeAndSemitoneNumber(int degreeDifference, int semitoneDifference) {
+        return INTERVALS_MAP.entrySet().stream()
+                .filter(interval -> interval.getValue().get(DEGREE_PROPERTY).equals(degreeDifference) &&
+                        interval.getValue().get(SEMITONE_PROPERTY).equals(semitoneDifference))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElseThrow(() ->
+                        new IntervalNotDefinedException(INTERVAL_NOT_DEFINED_EXCEPTION_MESSAGE));
+    }
+
+    private static int getNotesSemitoneDifferenceAccordingNoteOrder(
+            Map<String, Integer> firstNote, Map<String, Integer> lastNote, String noteOrder) {
+
+        int semitoneDifferenceBetweenNotes;
+        if (noteOrder.equals(INTERVAL_NOTE_ORDER_ASC))
+            semitoneDifferenceBetweenNotes = getNotesSemitoneDifferenceNoteOrderAsc(firstNote, lastNote);
+        else
+            semitoneDifferenceBetweenNotes = getNotesSemitoneDifferenceNoteOrderDesc(firstNote, lastNote);
+
+        return semitoneDifferenceBetweenNotes;
+    }
+
+    private static int getNotesSemitoneDifferenceNoteOrderAsc(
+            Map<String, Integer> firstNote, Map<String, Integer> lastNote) {
+
+        int notesSemitoneDifference = lastNote.get(SEMITONE_PROPERTY) -
+                firstNote.get(SEMITONE_PROPERTY);
+
+        if (notesSemitoneDifference <= MIN_SEMITONE_NUMBER)
+            notesSemitoneDifference += MAX_SEMITONE_NUMBER;
+
+        return notesSemitoneDifference;
+    }
+
+    private static int getNotesSemitoneDifferenceNoteOrderDesc(
+            Map<String, Integer> firstNote, Map<String, Integer> lastNote) {
+
+        int notesSemitoneDifference = firstNote.get(SEMITONE_PROPERTY) -
+                lastNote.get(SEMITONE_PROPERTY);
+
+        if (notesSemitoneDifference <= MIN_SEMITONE_NUMBER)
+            notesSemitoneDifference += MAX_SEMITONE_NUMBER;
+
+        return notesSemitoneDifference;
+    }
+
+    private static int getNotesDegreeDifferenceAccordingNoteOrder(
+            Map<String, Integer> firstNote, Map<String, Integer> lastNote, String noteOrder) {
+
+        int degreeDifferenceBetweenNotes;
+        if (noteOrder.equals(INTERVAL_NOTE_ORDER_ASC))
+            degreeDifferenceBetweenNotes = getNotesDegreeDifferenceNoteOrderAsc(firstNote, lastNote);
+        else
+            degreeDifferenceBetweenNotes = getNotesDegreeDifferenceNoteOrderDesc(firstNote, lastNote);
+
+        return degreeDifferenceBetweenNotes;
+    }
+
+    private static int getNotesDegreeDifferenceNoteOrderAsc(
+            Map<String, Integer> firstNote, Map<String, Integer> lastNote) {
+
+        int degreeDifferenceBetweenNotes = lastNote.get(DEGREE_PROPERTY) -
+                firstNote.get(DEGREE_PROPERTY) + 1;
+
+        if (degreeDifferenceBetweenNotes < MIN_INTERVAL_COUNT) // indicates that we have a note step over the note 'B' - 1 more additional semitone to achieve note 'C'
+            degreeDifferenceBetweenNotes = degreeDifferenceBetweenNotes + MAX_INTERVAL_COUNT - 1;
+
+        return degreeDifferenceBetweenNotes;
+    }
+
+    private static int getNotesDegreeDifferenceNoteOrderDesc(
+            Map<String, Integer> firstNote, Map<String, Integer> lastNote) {
+
+        int degreeDifferenceBetweenNotes = firstNote.get(DEGREE_PROPERTY) -
+                lastNote.get(DEGREE_PROPERTY) + 1;
+
+        if (degreeDifferenceBetweenNotes < MIN_INTERVAL_COUNT) // indicates that we have a note step over the note 'B' - 1 more additional semitone to achieve note 'C'
+            degreeDifferenceBetweenNotes = degreeDifferenceBetweenNotes + MAX_INTERVAL_COUNT - 1;
+
+        return degreeDifferenceBetweenNotes;
     }
 
     private static Map<String, Integer> getConstructedIntervalByName(String intervalName) {
@@ -319,4 +423,9 @@ public class Intervals {
         }
     }
 
+    private static class IntervalNotDefinedException extends RuntimeException {
+        public IntervalNotDefinedException(String message) {
+            super(message);
+        }
+    }
 }
